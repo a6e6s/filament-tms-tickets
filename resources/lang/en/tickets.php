@@ -9,10 +9,21 @@ return [
         'title' => 'Title',
         'description' => 'Description',
         'priority' => 'Priority',
-        'page_url' => 'Page URL',
-        'reporter_name' => 'Your name',
-        'reporter_email' => 'Your email',
-        'screenshots' => 'Screenshots',
+        'screenshot_mode' => 'Screenshot',
+        'screenshots' => 'Upload screenshots',
+    ],
+
+    'modes' => [
+        'auto' => 'Capture this page',
+        'element' => 'Select an area',
+        'upload' => 'Upload images',
+        'none' => 'No screenshot',
+    ],
+
+    'element' => [
+        'pick' => 'Pick an element',
+        'clear' => 'Clear',
+        'hint' => 'Click Pick an element, then click the part of the page to capture. Press Esc to cancel.',
     ],
 
     'priorities' => [
@@ -45,5 +56,6 @@ return [
         'invalid_type' => 'Screenshots must be PNG, JPEG or WebP images.',
         'file_too_large' => 'Each screenshot must be 2 MB or smaller.',
         'total_too_large' => 'Screenshots together must be 3.5 MB or smaller.',
+        'capture_failed' => 'The selected area could not be captured. Try another element.',
     ],
 ];

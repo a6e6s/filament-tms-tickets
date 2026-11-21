@@ -51,6 +51,27 @@ it('rejects screenshots whose combined size would exceed the request budget', fu
         ->toThrow(TicketSubmissionException::class, __('tms-tickets::tickets.errors.total_too_large'));
 });
 
+it('accepts browser captures as data URIs alongside uploads', function () {
+    $uris = app(ScreenshotEncoder::class)->encode(
+        [tmsTestImage('a.png')],
+        ['data:image/png;base64,'.TMS_TEST_PNG],
+    );
+
+    expect($uris)->toHaveCount(2);
+});
+
+it('rejects a browser capture that is not a base64 image data URI', function () {
+    expect(fn () => app(ScreenshotEncoder::class)->encode([], ['data:text/html;base64,PGgxPg==']))
+        ->toThrow(TicketSubmissionException::class, __('tms-tickets::tickets.errors.invalid_type'));
+});
+
+it('counts browser captures toward the screenshot limit', function () {
+    $captures = array_fill(0, 6, 'data:image/png;base64,'.TMS_TEST_PNG);
+
+    expect(fn () => app(ScreenshotEncoder::class)->encode([], $captures))
+        ->toThrow(TicketSubmissionException::class);
+});
+
 it('rejects files that are not png, jpeg or webp', function () {
     $path = tempnam(sys_get_temp_dir(), 'tms');
     file_put_contents($path, 'plain text, not an image');

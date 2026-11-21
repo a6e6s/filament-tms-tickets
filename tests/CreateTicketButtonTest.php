@@ -7,11 +7,14 @@ use Tms\FilamentTickets\Tests\TestCase;
 
 uses(TestCase::class);
 
-it('mounts the create ticket action with the expected fields', function () {
+const TMS_TEST_CAPTURE = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+
+it('mounts the create ticket action with the screenshot options', function () {
     Livewire::test(CreateTicketButton::class)
         ->call('mountAction', 'createTicket')
-        ->assertSchemaComponentExists('title')
-        ->assertSchemaComponentExists('device_metadata')
+        ->assertSchemaComponentExists('screenshot_mode')
+        ->assertSchemaComponentExists('auto_capture')
+        ->assertSchemaComponentExists('element_captures')
         ->assertSchemaComponentExists('screenshots');
 });
 
@@ -23,11 +26,41 @@ it('submits the form to the TMS and reports the ticket number', function () {
             'title' => 'Broken export',
             'description' => 'The CSV export is empty.',
             'priority' => 'high',
-            'reporter_name' => 'Sam',
-            'reporter_email' => 'sam@example.com',
+            'screenshot_mode' => 'none',
         ]);
 
     Http::assertSent(fn ($request) => $request['title'] === 'Broken export'
         && $request['priority'] === 'high'
-        && $request['reporter']['email'] === 'sam@example.com');
+        && ! isset($request['screenshots']));
+});
+
+it('sends the automatic page capture as a screenshot', function () {
+    Http::fake(['tms.test/*' => Http::response(['ticket_number' => 'TKT-43', 'tracking_url' => null], 202)]);
+
+    Livewire::test(CreateTicketButton::class)
+        ->callAction('createTicket', data: [
+            'title' => 'Layout broken',
+            'description' => 'The sidebar overlaps the table.',
+            'priority' => 'medium',
+            'screenshot_mode' => 'auto',
+            'auto_capture' => json_encode([TMS_TEST_CAPTURE]),
+        ]);
+
+    Http::assertSent(fn ($request) => count($request['screenshots'] ?? []) === 1
+        && str_starts_with($request['screenshots'][0], 'data:image/png;base64,'));
+});
+
+it('ignores captures that belong to a different screenshot mode', function () {
+    Http::fake(['tms.test/*' => Http::response(['ticket_number' => 'TKT-44', 'tracking_url' => null], 202)]);
+
+    Livewire::test(CreateTicketButton::class)
+        ->callAction('createTicket', data: [
+            'title' => 'Stale capture',
+            'description' => 'Upload mode should not send element captures.',
+            'priority' => 'low',
+            'screenshot_mode' => 'upload',
+            'element_captures' => json_encode([TMS_TEST_CAPTURE]),
+        ]);
+
+    Http::assertSent(fn ($request) => ! isset($request['screenshots']));
 });

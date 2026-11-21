@@ -21,27 +21,37 @@ class ScreenshotEncoder
     private const ALLOWED_MIME = ['image/png', 'image/jpeg', 'image/webp'];
 
     /**
-     * @param  array<int, UploadedFile>  $files
+     * @param  array<int, UploadedFile>  $files  uploaded screenshots
+     * @param  array<int, string>  $dataUris  browser captures as base64 data URIs
      * @return array<int, string> data URIs
      *
      * @throws TicketSubmissionException
      */
-    public function encode(array $files): array
+    public function encode(array $files = [], array $dataUris = []): array
     {
-        if (count($files) > self::MAX_COUNT) {
+        if (count($files) + count($dataUris) > self::MAX_COUNT) {
             $message = __('tms-tickets::tickets.errors.too_many_screenshots', ['max' => self::MAX_COUNT]);
 
             throw new TicketSubmissionException($message, ['screenshots' => [$message]]);
+        }
+
+        $blobs = [];
+        foreach ($files as $file) {
+            $path = $file->getRealPath();
+            $blobs[] = $path === false ? '' : (string) file_get_contents($path);
+        }
+
+        foreach ($dataUris as $uri) {
+            $blobs[] = $this->decodeDataUri($uri);
         }
 
         $uris = [];
         $total = 0;
         $finfo = new finfo(FILEINFO_MIME_TYPE);
 
-        foreach ($files as $file) {
-            $path = $file->getRealPath();
-            $size = $path === false ? 0 : (int) filesize($path);
-            $mime = $path === false ? '' : (string) $finfo->file($path);
+        foreach ($blobs as $blob) {
+            $size = strlen($blob);
+            $mime = $size === 0 ? '' : (string) $finfo->buffer($blob);
 
             if (! in_array($mime, self::ALLOWED_MIME, true)) {
                 throw $this->fieldError('screenshots', __('tms-tickets::tickets.errors.invalid_type'));
@@ -56,10 +66,25 @@ class ScreenshotEncoder
                 throw $this->fieldError('screenshots', __('tms-tickets::tickets.errors.total_too_large'));
             }
 
-            $uris[] = 'data:'.$mime.';base64,'.base64_encode((string) file_get_contents($path));
+            $uris[] = 'data:'.$mime.';base64,'.base64_encode($blob);
         }
 
         return $uris;
+    }
+
+    private function decodeDataUri(string $uri): string
+    {
+        if (! preg_match('#^data:image/(?:png|jpeg|webp);base64,([A-Za-z0-9+/=]+)$#', $uri, $matches)) {
+            throw $this->fieldError('screenshots', __('tms-tickets::tickets.errors.invalid_type'));
+        }
+
+        $bytes = base64_decode($matches[1], true);
+
+        if ($bytes === false) {
+            throw $this->fieldError('screenshots', __('tms-tickets::tickets.errors.invalid_type'));
+        }
+
+        return $bytes;
     }
 
     private function fieldError(string $field, string $message): TicketSubmissionException

@@ -4,7 +4,8 @@ A Filament v5 plugin that adds a **Create ticket** button to any panel of a host
 
 Features:
 
-- Title, description, priority, page URL, reporter name and email, and up to 5 screenshots.
+- Title, description, and priority. The reporter and page URL come from the signed-in user and the current page.
+- Screenshots, chosen with a mode switch: **Automatic** (default, captures the visible page when the form opens), **Select an element** (click one element on the page, up to 5), **Upload** (files from disk), or **None**.
 - Captures the page URL, user agent, viewport, and recent browser console errors automatically.
 - Idempotency key per form, so a retry after a network failure does not create a duplicate ticket.
 - English and Arabic labels.
@@ -120,6 +121,7 @@ Common failures shown to users:
 
 - Button missing: check `TMS_TICKETS_ENABLED`, confirm the plugin is listed in that panel's provider, and run `php artisan optimize:clear`.
 - Screenshots fail: check the file type (PNG, JPEG, WebP only) and size limits above.
+- Automatic capture is empty or missing content: it uses html2canvas, which approximates the page. Cross-origin images without CORS headers and some CSS effects may not render. Use **Select an element** or **Upload** instead.
 - Console errors not captured: they are recorded only after the plugin's script loads on the page.
 
 ## Development

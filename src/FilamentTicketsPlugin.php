@@ -26,7 +26,8 @@ class FilamentTicketsPlugin implements Plugin
 
         $panel
             ->renderHook(PanelsRenderHook::GLOBAL_SEARCH_AFTER, fn (): string => view('tms-tickets::button')->render())
-            ->renderHook(PanelsRenderHook::BODY_END, fn (): string => view('tms-tickets::console-capture')->render());
+            ->renderHook(PanelsRenderHook::BODY_END, fn (): string => view('tms-tickets::console-capture')->render()
+                .view('tms-tickets::screenshot-scripts')->render());
     }
 
     public function boot(Panel $panel): void {}
