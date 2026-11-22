@@ -7,10 +7,9 @@
     const OVERLAY_ID = 'tms-tickets-pick-overlay';
     const MODAL_SELECTOR = '.fi-modal';
 
-    const state = { auto: [], elements: [], pending: false, error: null };
+    const state = { elements: [], error: null };
     const fields = {};
     let picking = null;
-    let captureRun = 0;
 
     function isOwnNode(node) {
         return node.id === OVERLAY_ID || node.classList?.contains('tms-tickets-highlight') || node.matches?.(MODAL_SELECTOR);
@@ -81,33 +80,6 @@
         return toJpeg(await render(target));
     }
 
-    async function captureViewport() {
-        const body = document.body;
-        const rect = body.getBoundingClientRect();
-
-        if (! rect.width || ! rect.height) {
-            return null;
-        }
-
-        const full = await render(body);
-        const scale = full.width / rect.width;
-        const sx = Math.max(0, -rect.left * scale);
-        const sy = Math.max(0, -rect.top * scale);
-        const sw = Math.min(full.width - sx, window.innerWidth * scale);
-        const sh = Math.min(full.height - sy, window.innerHeight * scale);
-
-        if (sw <= 0 || sh <= 0) {
-            return null;
-        }
-
-        const viewport = document.createElement('canvas');
-        viewport.width = Math.round(sw);
-        viewport.height = Math.round(sh);
-        viewport.getContext('2d').drawImage(full, sx, sy, sw, sh, 0, 0, viewport.width, viewport.height);
-
-        return toJpeg(viewport);
-    }
-
     function write(el, value) {
         el.value = JSON.stringify(value);
         el.dispatchEvent(new Event('input', { bubbles: true }));
@@ -116,61 +88,23 @@
 
     function snapshot() {
         return {
-            auto: [...state.auto],
             elements: [...state.elements],
-            pending: state.pending,
             error: state.error,
         };
     }
 
     function syncAll() {
-        const values = { auto: state.auto, elements: state.elements };
-
         for (const key of Object.keys(fields)) {
             if (fields[key].isConnected) {
-                write(fields[key], values[key]);
+                write(fields[key], state[key]);
             }
         }
 
         window.dispatchEvent(new CustomEvent('tms-tickets:captures', { detail: snapshot() }));
     }
 
-    function start() {
-        const run = ++captureRun;
-        state.elements = [];
-        state.auto = [];
-        state.pending = true;
-        state.error = null;
-        syncAll();
-
-        captureViewport()
-            .then((uri) => {
-                if (run !== captureRun) return;
-                state.auto = uri ? [uri] : [];
-                state.error = uri ? null : 'auto';
-            })
-            .catch(() => {
-                if (run !== captureRun) return;
-                state.auto = [];
-                state.error = 'auto';
-            })
-            .finally(() => {
-                if (run !== captureRun) return;
-                state.pending = false;
-                syncAll();
-            });
-    }
-
     function clear() {
         state.elements = [];
-        syncAll();
-    }
-
-    function removeAuto() {
-        captureRun++;
-        state.auto = [];
-        state.pending = false;
-        state.error = null;
         syncAll();
     }
 
@@ -280,16 +214,10 @@
     }
 
     window.TmsTickets = {
-        start,
         clear,
         pick,
         snapshot,
-        removeAuto,
         removeElement,
-        bindAuto(el) {
-            fields.auto = el;
-            write(el, state.auto);
-        },
         bindElements(el) {
             fields.elements = el;
             write(el, state.elements);

@@ -50,23 +50,16 @@ class CreateTicketAction
                 Radio::make('screenshot_mode')
                     ->label(__('tms-tickets::tickets.fields.screenshot_mode'))
                     ->options([
-                        'auto' => __('tms-tickets::tickets.modes.auto'),
                         'element' => __('tms-tickets::tickets.modes.element'),
                         'upload' => __('tms-tickets::tickets.modes.upload'),
                         'none' => __('tms-tickets::tickets.modes.none'),
                     ])
-                    ->default('auto')
+                    ->default('none')
                     ->inline()
                     ->live(),
-                ViewField::make('auto_preview')
-                    ->hiddenLabel()
-                    ->view('tms-tickets::capture-gallery')
-                    ->viewData(['source' => 'auto'])
-                    ->visible(fn (Get $get): bool => $get('screenshot_mode') === 'auto'),
                 ViewField::make('element_picker')
                     ->hiddenLabel()
                     ->view('tms-tickets::capture-gallery')
-                    ->viewData(['source' => 'element'])
                     ->visible(fn (Get $get): bool => $get('screenshot_mode') === 'element'),
                 FileUpload::make('screenshots')
                     ->label(__('tms-tickets::tickets.fields.screenshots'))
@@ -77,10 +70,6 @@ class CreateTicketAction
                     ->maxSize(ScreenshotEncoder::MAX_FILE_BYTES / 1024)
                     ->storeFiles(false)
                     ->visible(fn (Get $get): bool => $get('screenshot_mode') === 'upload'),
-                self::hiddenField('auto_capture')
-                    ->extraInputAttributes([
-                        'x-init' => 'window.TmsTickets?.bindAuto($el)',
-                    ]),
                 self::hiddenField('element_captures')
                     ->extraInputAttributes([
                         'x-init' => 'window.TmsTickets?.bindElements($el)',
@@ -115,11 +104,7 @@ class CreateTicketAction
                 ];
 
                 $files = $mode === 'upload' ? array_values(array_filter((array) ($data['screenshots'] ?? []))) : [];
-                $captures = match ($mode) {
-                    'auto' => self::decodeCaptures($data['auto_capture'] ?? null),
-                    'element' => self::decodeCaptures($data['element_captures'] ?? null),
-                    default => [],
-                };
+                $captures = $mode === 'element' ? self::decodeCaptures($data['element_captures'] ?? null) : [];
 
                 try {
                     $encoded = app(ScreenshotEncoder::class)->encode($files, $captures);

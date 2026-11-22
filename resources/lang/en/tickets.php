@@ -14,7 +14,6 @@ return [
     ],
 
     'modes' => [
-        'auto' => 'Capture this page',
         'element' => 'Select an area',
         'upload' => 'Upload images',
         'none' => 'No screenshot',
@@ -27,9 +26,6 @@ return [
     ],
 
     'capture' => [
-        'retake' => 'Retake',
-        'capturing' => 'Capturing this page…',
-        'failed' => 'This page could not be captured. You can still send the ticket without it.',
         'remove' => 'Remove',
     ],
 

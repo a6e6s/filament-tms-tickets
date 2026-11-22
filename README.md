@@ -5,7 +5,7 @@ A Filament v5 plugin that adds a **Create ticket** button to any panel of a host
 Features:
 
 - Title, description, and priority. The reporter and page URL come from the signed-in user and the current page.
-- Screenshots, chosen with a mode switch: **Automatic** (default, captures the visible page when the form opens), **Select an element** (click one element on the page, up to 5), **Upload** (files from disk), or **None**. Every captured screenshot appears as a thumbnail in the form, with a Remove button; automatic capture can be retaken.
+- Screenshots, chosen with a mode switch: **Select an element** (click **Pick an element**, then click part of the page, up to 5), **Upload** (files from disk), or **None** (default). Every captured screenshot appears as a thumbnail in the form, with a Remove button.
 - Captures the page URL, user agent, viewport, and recent browser console errors automatically.
 - Idempotency key per form, so a retry after a network failure does not create a duplicate ticket.
 - English and Arabic labels.
@@ -121,7 +121,8 @@ Common failures shown to users:
 
 - Button missing: check `TMS_TICKETS_ENABLED`, confirm the plugin is listed in that panel's provider, and run `php artisan optimize:clear`.
 - Screenshots fail: check the file type (PNG, JPEG, WebP only) and size limits above.
-- Automatic capture is missing content: it uses html-to-image, which approximates the page. Cross-origin images without CORS headers are skipped, and some CSS effects may not render. Use **Select an element** or **Upload** instead.
+- Screenshots are captured only when the user asks for them. Opening the form stays fast; whole-page capture is not offered because it blocks the browser on large pages.
+- Captured elements use html-to-image, which approximates the page. Cross-origin images without CORS headers are skipped, and some CSS effects may not render. Use **Upload** if a capture looks wrong.
 - Console errors not captured: they are recorded only after the plugin's script loads on the page.
 
 ## Development

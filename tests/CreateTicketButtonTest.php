@@ -13,7 +13,6 @@ it('mounts the create ticket action with the screenshot options', function () {
     Livewire::test(CreateTicketButton::class)
         ->call('mountAction', 'createTicket')
         ->assertSchemaComponentExists('screenshot_mode')
-        ->assertSchemaComponentExists('auto_capture')
         ->assertSchemaComponentExists('element_captures')
         ->assertSchemaComponentExists('screenshots');
 });
@@ -34,7 +33,7 @@ it('submits the form to the TMS and reports the ticket number', function () {
         && ! isset($request['screenshots']));
 });
 
-it('sends the automatic page capture as a screenshot', function () {
+it('sends the selected element captures as screenshots', function () {
     Http::fake(['tms.test/*' => Http::response(['ticket_number' => 'TKT-43', 'tracking_url' => null], 202)]);
 
     Livewire::test(CreateTicketButton::class)
@@ -42,8 +41,8 @@ it('sends the automatic page capture as a screenshot', function () {
             'title' => 'Layout broken',
             'description' => 'The sidebar overlaps the table.',
             'priority' => 'medium',
-            'screenshot_mode' => 'auto',
-            'auto_capture' => json_encode([TMS_TEST_CAPTURE]),
+            'screenshot_mode' => 'element',
+            'element_captures' => json_encode([TMS_TEST_CAPTURE]),
         ]);
 
     Http::assertSent(fn ($request) => count($request['screenshots'] ?? []) === 1
