@@ -22,4 +22,11 @@ return [
     */
     'timeout' => (int) env('TMS_TICKETS_TIMEOUT', 10),
 
+    /*
+    | Middleware for the plain fallback form at /tms-tickets/report. It works
+    | without Livewire or the panel, so it stays usable when the UI is broken.
+    | Keep 'auth' so only signed-in users can send tickets.
+    */
+    'fallback_middleware' => ['web', 'auth'],
+
 ];
