@@ -18,7 +18,7 @@ Features:
 
 ## 1. Create a SourceApp token in the TMS
 
-1. In the TMS admin, open **Source Apps** and create one entry per host project (for example `jit-hr`).
+1. In the TMS admin, open **Source Apps** and create one entry per host project (for example `my-app`).
 2. Use the token action in the table. The plaintext token is shown **once**; copy it.
    The token is created with the `tickets:create` ability only.
 
