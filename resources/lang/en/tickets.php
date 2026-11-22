@@ -1,7 +1,7 @@
 <?php
 
 return [
-    'button' => 'Create ticket',
+    'button' => 'Support',
     'heading' => 'Report an issue',
     'submit' => 'Send ticket',
 
