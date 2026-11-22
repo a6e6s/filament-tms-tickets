@@ -87,7 +87,7 @@ class CreateTicketAction
                     ]),
                 self::hiddenField('device_metadata')
                     ->extraInputAttributes([
-                        'x-init' => 'const meta = { user_agent: navigator.userAgent, viewport: window.innerWidth + "x" + window.innerHeight, console_errors: window.__tmsConsoleErrors ?? [] }; $el.value = JSON.stringify(meta); $el.dispatchEvent(new Event(\'input\')); $el.dispatchEvent(new Event(\'change\'));',
+                        'x-init' => 'const meta = { user_agent: navigator.userAgent, viewport: `${window.innerWidth}x${window.innerHeight}`, console_errors: window.__tmsConsoleErrors ?? [] }; $el.value = JSON.stringify(meta); $el.dispatchEvent(new Event(\'input\')); $el.dispatchEvent(new Event(\'change\'));',
                     ]),
                 Hidden::make('idempotency_key')
                     ->default(fn (): string => TmsTicketClient::newIdempotencyKey()),

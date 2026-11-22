@@ -121,7 +121,7 @@ Common failures shown to users:
 
 - Button missing: check `TMS_TICKETS_ENABLED`, confirm the plugin is listed in that panel's provider, and run `php artisan optimize:clear`.
 - Screenshots fail: check the file type (PNG, JPEG, WebP only) and size limits above.
-- Automatic capture is empty or missing content: it uses html2canvas, which approximates the page. Cross-origin images without CORS headers and some CSS effects may not render. Use **Select an element** or **Upload** instead.
+- Automatic capture is missing content: it uses html-to-image, which approximates the page. Cross-origin images without CORS headers are skipped, and some CSS effects may not render. Use **Select an element** or **Upload** instead.
 - Console errors not captured: they are recorded only after the plugin's script loads on the page.
 
 ## Development

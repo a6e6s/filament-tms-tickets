@@ -15,17 +15,54 @@
         return node.id === OVERLAY_ID || node.classList?.contains('tms-tickets-highlight') || node.matches?.(MODAL_SELECTOR);
     }
 
-    async function capture(target, options = {}) {
-        const canvas = await html2canvas(target, {
-            useCORS: true,
-            logging: false,
-            scale: 1,
-            backgroundColor: '#ffffff',
-            ignoreElements: isOwnNode,
-            ...options,
-        });
+    function isCrossOriginImage(node) {
+        return node.tagName === 'IMG' && new URL(node.src, window.location.href).origin !== window.location.origin;
+    }
 
-        if (! canvas.width || ! canvas.height) {
+    // The SVG serializer rejects attribute names that are not valid XML (wire:*, x-on:*, :class, @click).
+    // Stripping them from the live DOM would make Livewire reinitialise components, so this only runs on a copy.
+    const VALID_XML_ATTR = /^((xlink|xml|xmlns):)?[A-Za-z_][\w.-]*$/;
+
+    // Alpine removes x-cloak only from live nodes; the copy would stay hidden by [x-cloak]{display:none}.
+    function stripInvalidAttributes(root) {
+        for (const el of [root, ...root.querySelectorAll('*')]) {
+            el.removeAttribute('x-cloak');
+
+            for (const attr of [...el.attributes]) {
+                if (! VALID_XML_ATTR.test(attr.name)) {
+                    el.removeAttribute(attr.name);
+                }
+            }
+        }
+    }
+
+    async function render(target) {
+        const rect = target.getBoundingClientRect();
+        const box = document.createElement('div');
+        // Chrome paints nothing for off-screen content, so the box stays on-screen behind the page.
+        box.style.cssText = `position:fixed;left:0;top:0;z-index:-9999;pointer-events:none;width:${rect.width}px;height:${rect.height}px;overflow:hidden;background:#ffffff;`;
+
+        const copy = target.cloneNode(true);
+        copy.style.margin = '0';
+        stripInvalidAttributes(copy);
+
+        box.append(copy);
+        document.body.append(box);
+
+        try {
+            return await window.htmlToImage.toCanvas(box, {
+                backgroundColor: '#ffffff',
+                pixelRatio: 1,
+                skipFonts: true,
+                filter: (node) => ! isOwnNode(node) && ! isCrossOriginImage(node),
+            });
+        } finally {
+            box.remove();
+        }
+    }
+
+    function toJpeg(canvas) {
+        if (! canvas || ! canvas.width || ! canvas.height) {
             return null;
         }
 
@@ -39,13 +76,35 @@
         return null;
     }
 
-    function captureViewport() {
-        return capture(document.body, {
-            x: window.scrollX,
-            y: window.scrollY,
-            width: window.innerWidth,
-            height: window.innerHeight,
-        });
+    async function captureElement(target) {
+        return toJpeg(await render(target));
+    }
+
+    async function captureViewport() {
+        const body = document.body;
+        const rect = body.getBoundingClientRect();
+
+        if (! rect.width || ! rect.height) {
+            return null;
+        }
+
+        const full = await render(body);
+        const scale = full.width / rect.width;
+        const sx = Math.max(0, -rect.left * scale);
+        const sy = Math.max(0, -rect.top * scale);
+        const sw = Math.min(full.width - sx, window.innerWidth * scale);
+        const sh = Math.min(full.height - sy, window.innerHeight * scale);
+
+        if (sw <= 0 || sh <= 0) {
+            return null;
+        }
+
+        const viewport = document.createElement('canvas');
+        viewport.width = Math.round(sw);
+        viewport.height = Math.round(sh);
+        viewport.getContext('2d').drawImage(full, sx, sy, sw, sh, 0, 0, viewport.width, viewport.height);
+
+        return toJpeg(viewport);
     }
 
     function write(el, value) {
@@ -171,7 +230,7 @@
             }
 
             try {
-                const uri = await capture(target);
+                const uri = await captureElement(target);
                 if (uri) {
                     state.elements.push(uri);
                     syncAll();

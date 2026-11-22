@@ -7,7 +7,7 @@ use Symfony\Component\HttpFoundation\BinaryFileResponse;
 
 class AssetController
 {
-    private const ASSETS = ['html2canvas.min.js', 'screenshot.js'];
+    private const ASSETS = ['html-to-image.js', 'screenshot.js'];
 
     public function __invoke(string $file): BinaryFileResponse
     {
