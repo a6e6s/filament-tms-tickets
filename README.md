@@ -28,19 +28,11 @@ Use one token per host project so tokens can be revoked independently.
 
 Add the repository to the host's `composer.json`:
 
-```json
-"repositories": [
-    { "type": "vcs", "url": "https://github.com/a6e6s/filament-tms-tickets" }
-]
-```
-
-Then require it. The repository is private, so Composer needs GitHub access (a token or `gh auth` configured for Composer):
-
 ```bash
-composer require a6e6s/filament-tms-tickets:^0.1
+composer require a6e6s/filament-tms-tickets:^1.0
 ```
 
-Local development alternative (path repository pointing at a checkout):
+Local development alternative (path repository pointing at a checkout, useful for testing changes before a release):
 
 ```json
 "repositories": [
@@ -87,9 +79,13 @@ public function panel(Panel $panel): Panel
 }
 ```
 
-Multi-panel app (for example `jit-hr`, which has `admin`, `afms`, `cpe`, `cms`, `crm`, `employee`): add the plugin only to the panels that should report tickets, such as `admin` and `crm`. Panels without the plugin show no button.
+Multi-panel app (for example one with `admin`, `crm`, and `employee` panels): add the plugin only to the panels that should report tickets, such as `admin` and `crm`. Panels without the plugin show no button.
 
 Every panel that uses the plugin sends tickets with the host's SourceApp token, so all tickets from one host project share one source.
+
+### Fallback form
+
+The plugin also registers a plain HTML form at `/tms-tickets/report`. It does not use Livewire, Filament, or any JavaScript, so it still works when the panel's assets or a Livewire request are broken. It supports title, description, and priority only; no screenshots. The route requires an authenticated user by default. Change it with `fallback_middleware` in the published config (for example `['web']` to allow anonymous reports, which is not recommended without rate limiting).
 
 ## 5. Verify the deployment
 
@@ -97,7 +93,7 @@ Every panel that uses the plugin sends tickets with the host's SourceApp token, 
    ```bash
    curl -sS -o /dev/null -w "%{http_code}\n" https://tms.example.com/up
    ```
-2. Open a panel with the plugin, click **Create ticket**, fill in the form, and submit.
+2. Open a panel with the plugin, click **Support** (or **Create ticket** in older builds), fill in the form, and submit.
 3. Expected result: a success notification with a ticket number, and the ticket appears in the TMS.
 4. Screenshots are stored synchronously when the ticket is created, so no queue worker is needed for them. If a screenshot is missing from a ticket, check the TMS logs for a storage error.
 
@@ -119,6 +115,7 @@ Common failures shown to users:
 
 ## Troubleshooting
 
+- Panel broken or the button can't open: use the plain fallback form at `/tms-tickets/report`, described below.
 - Button missing: check `TMS_TICKETS_ENABLED`, confirm the plugin is listed in that panel's provider, and run `php artisan optimize:clear`.
 - Screenshots fail: check the file type (PNG, JPEG, WebP only) and size limits above.
 - Screenshots are captured only when the user asks for them. Opening the form stays fast; whole-page capture is not offered because it blocks the browser on large pages.
