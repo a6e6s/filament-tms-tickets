@@ -17,7 +17,7 @@ class AssetController
             __DIR__.'/../../resources/js/'.$file,
             [
                 'Content-Type' => 'application/javascript; charset=UTF-8',
-                'Cache-Control' => 'public, max-age=86400',
+                'Cache-Control' => 'no-cache',
             ],
         );
     }
