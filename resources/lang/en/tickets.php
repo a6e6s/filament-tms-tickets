@@ -26,6 +26,13 @@ return [
         'hint' => 'Click Pick an element, then click the part of the page to capture. Press Esc to cancel.',
     ],
 
+    'capture' => [
+        'retake' => 'Retake',
+        'capturing' => 'Capturing this page…',
+        'failed' => 'This page could not be captured. You can still send the ticket without it.',
+        'remove' => 'Remove',
+    ],
+
     'priorities' => [
         'low' => 'Low',
         'medium' => 'Medium',

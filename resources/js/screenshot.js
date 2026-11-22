@@ -7,9 +7,10 @@
     const OVERLAY_ID = 'tms-tickets-pick-overlay';
     const MODAL_SELECTOR = '.fi-modal';
 
-    const state = { auto: [], elements: [] };
+    const state = { auto: [], elements: [], pending: false, error: null };
     const fields = {};
     let picking = null;
+    let captureRun = 0;
 
     function isOwnNode(node) {
         return node.id === OVERLAY_ID || node.classList?.contains('tms-tickets-highlight') || node.matches?.(MODAL_SELECTOR);
@@ -113,6 +114,15 @@
         el.dispatchEvent(new Event('change', { bubbles: true }));
     }
 
+    function snapshot() {
+        return {
+            auto: [...state.auto],
+            elements: [...state.elements],
+            pending: state.pending,
+            error: state.error,
+        };
+    }
+
     function syncAll() {
         const values = { auto: state.auto, elements: state.elements };
 
@@ -122,23 +132,31 @@
             }
         }
 
-        window.dispatchEvent(new CustomEvent('tms-tickets:captures', {
-            detail: { count: state.elements.length },
-        }));
+        window.dispatchEvent(new CustomEvent('tms-tickets:captures', { detail: snapshot() }));
     }
 
     function start() {
+        const run = ++captureRun;
         state.elements = [];
         state.auto = [];
+        state.pending = true;
+        state.error = null;
         syncAll();
 
         captureViewport()
             .then((uri) => {
+                if (run !== captureRun) return;
                 state.auto = uri ? [uri] : [];
-                syncAll();
+                state.error = uri ? null : 'auto';
             })
             .catch(() => {
+                if (run !== captureRun) return;
                 state.auto = [];
+                state.error = 'auto';
+            })
+            .finally(() => {
+                if (run !== captureRun) return;
+                state.pending = false;
                 syncAll();
             });
     }
@@ -147,6 +165,20 @@
         state.elements = [];
         syncAll();
     }
+
+    function removeAuto() {
+        captureRun++;
+        state.auto = [];
+        state.pending = false;
+        state.error = null;
+        syncAll();
+    }
+
+    function removeElement(index) {
+        state.elements.splice(index, 1);
+        syncAll();
+    }
+
 
     function elementAt(x, y) {
         const overlay = document.getElementById(OVERLAY_ID);
@@ -233,13 +265,15 @@
                 const uri = await captureElement(target);
                 if (uri) {
                     state.elements.push(uri);
-                    syncAll();
+                    state.error = null;
                 } else {
-                    window.dispatchEvent(new CustomEvent('tms-tickets:captures', { detail: { error: true } }));
+                    state.error = 'element';
                 }
             } catch (error) {
-                window.dispatchEvent(new CustomEvent('tms-tickets:captures', { detail: { error: true } }));
+                state.error = 'element';
             }
+
+            syncAll();
         }, true);
 
         document.addEventListener('keydown', onPickKey, true);
@@ -249,6 +283,9 @@
         start,
         clear,
         pick,
+        snapshot,
+        removeAuto,
+        removeElement,
         bindAuto(el) {
             fields.auto = el;
             write(el, state.auto);

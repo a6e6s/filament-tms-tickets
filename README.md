@@ -5,7 +5,7 @@ A Filament v5 plugin that adds a **Create ticket** button to any panel of a host
 Features:
 
 - Title, description, and priority. The reporter and page URL come from the signed-in user and the current page.
-- Screenshots, chosen with a mode switch: **Automatic** (default, captures the visible page when the form opens), **Select an element** (click one element on the page, up to 5), **Upload** (files from disk), or **None**.
+- Screenshots, chosen with a mode switch: **Automatic** (default, captures the visible page when the form opens), **Select an element** (click one element on the page, up to 5), **Upload** (files from disk), or **None**. Every captured screenshot appears as a thumbnail in the form, with a Remove button; automatic capture can be retaken.
 - Captures the page URL, user agent, viewport, and recent browser console errors automatically.
 - Idempotency key per form, so a retry after a network failure does not create a duplicate ticket.
 - English and Arabic labels.
@@ -14,7 +14,7 @@ Features:
 ## Requirements
 
 - PHP 8.3+, Laravel 13, Filament 5.
-- A running TMS instance with the `POST /api/v1/tickets` endpoint and its queue worker.
+- A running TMS instance with the `POST /api/v1/tickets` endpoint.
 
 ## 1. Create a SourceApp token in the TMS
 
@@ -99,7 +99,7 @@ Every panel that uses the plugin sends tickets with the host's SourceApp token, 
    ```
 2. Open a panel with the plugin, click **Create ticket**, fill in the form, and submit.
 3. Expected result: a success notification with a ticket number, and the ticket appears in the TMS.
-4. Check that the TMS queue worker is running. Screenshots are decoded and stored by the TMS queue.
+4. Screenshots are stored synchronously when the ticket is created, so no queue worker is needed for them. If a screenshot is missing from a ticket, check the TMS logs for a storage error.
 
 ## Limits and error messages
 

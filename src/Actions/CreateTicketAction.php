@@ -58,9 +58,15 @@ class CreateTicketAction
                     ->default('auto')
                     ->inline()
                     ->live(),
+                ViewField::make('auto_preview')
+                    ->hiddenLabel()
+                    ->view('tms-tickets::capture-gallery')
+                    ->viewData(['source' => 'auto'])
+                    ->visible(fn (Get $get): bool => $get('screenshot_mode') === 'auto'),
                 ViewField::make('element_picker')
                     ->hiddenLabel()
-                    ->view('tms-tickets::element-picker')
+                    ->view('tms-tickets::capture-gallery')
+                    ->viewData(['source' => 'element'])
                     ->visible(fn (Get $get): bool => $get('screenshot_mode') === 'element'),
                 FileUpload::make('screenshots')
                     ->label(__('tms-tickets::tickets.fields.screenshots'))
