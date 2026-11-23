@@ -26,11 +26,13 @@ Use one token per host project so tokens can be revoked independently.
 
 ## 2. Install in the host project
 
-Add the repository to the host's `composer.json`:
+Install the package from Packagist. This also adds it to the host's `composer.json`:
 
 ```bash
 composer require a6e6s/filament-tms-tickets:^1.0
 ```
+
+To upgrade an existing install to the latest 1.x release, run `composer update a6e6s/filament-tms-tickets` and then `php artisan optimize:clear`.
 
 Local development alternative (path repository pointing at a checkout, useful for testing changes before a release):
 
