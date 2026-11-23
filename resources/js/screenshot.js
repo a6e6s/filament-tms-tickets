@@ -15,8 +15,14 @@
         return node.id === OVERLAY_ID || node.classList?.contains('tms-tickets-highlight') || node.matches?.(MODAL_SELECTOR);
     }
 
-    function isCrossOriginImage(node) {
-        return node.tagName === 'IMG' && new URL(node.src, window.location.href).origin !== window.location.origin;
+    // A broken, lazy or cross-origin image makes the SVG rasteriser fail for the whole element.
+    function isUnusableImage(node) {
+        return node.tagName === 'IMG'
+            && (! node.complete || node.naturalWidth === 0 || new URL(node.src, window.location.href).origin !== window.location.origin);
+    }
+
+    function isAnyImage(node) {
+        return node.tagName === 'IMG';
     }
 
     // The SVG serializer rejects attribute names that are not valid XML (wire:*, x-on:*, :class, @click).
@@ -36,7 +42,7 @@
         }
     }
 
-    async function render(target) {
+    async function render(target, skipImage) {
         const rect = target.getBoundingClientRect();
         const box = document.createElement('div');
         // Chrome paints nothing for off-screen content, so the box stays on-screen behind the page.
@@ -54,7 +60,7 @@
                 backgroundColor: '#ffffff',
                 pixelRatio: 1,
                 skipFonts: true,
-                filter: (node) => ! isOwnNode(node) && ! isCrossOriginImage(node),
+                filter: (node) => ! isOwnNode(node) && ! skipImage(node),
             });
         } finally {
             box.remove();
@@ -77,7 +83,13 @@
     }
 
     async function captureElement(target) {
-        return toJpeg(await render(target));
+        try {
+            return toJpeg(await render(target, isUnusableImage));
+        } catch (error) {
+            console.warn('TMS Tickets: retrying capture without images.', error);
+
+            return toJpeg(await render(target, isAnyImage));
+        }
     }
 
     function write(el, value) {
@@ -204,6 +216,7 @@
                     state.error = 'element';
                 }
             } catch (error) {
+                console.error('TMS Tickets: capture failed.', error);
                 state.error = 'element';
             }
 
