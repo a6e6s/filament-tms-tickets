@@ -2,6 +2,7 @@
 
 use Illuminate\Auth\GenericUser;
 use Illuminate\Support\Facades\Http;
+use Tms\FilamentTickets\Services\TicketContext;
 use Tms\FilamentTickets\Tests\TestCase;
 
 uses(TestCase::class);
@@ -48,3 +49,15 @@ it('returns validation errors without contacting the TMS', function () {
 
     Http::assertNothingSent();
 });
+
+it('parses the operating system and browser from the user agent', function (string $userAgent, array $expected) {
+    expect(TicketContext::parseUserAgent($userAgent))->toBe($expected);
+})->with([
+    'windows chrome' => ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/124.0 Safari/537.36', ['os' => 'Windows', 'browser' => 'Chrome']],
+    'windows edge' => ['Mozilla/5.0 (Windows NT 10.0; Win64; x64) Chrome/124.0 Safari/537.36 Edg/124.0', ['os' => 'Windows', 'browser' => 'Edge']],
+    'mac safari' => ['Mozilla/5.0 (Macintosh; Intel Mac OS X 14_4) AppleWebKit/605.1.15 Version/17.4 Safari/605.1.15', ['os' => 'macOS', 'browser' => 'Safari']],
+    'android firefox' => ['Mozilla/5.0 (Android 14; Mobile; rv:125.0) Gecko/125.0 Firefox/125.0', ['os' => 'Android', 'browser' => 'Firefox']],
+    'iphone safari' => ['Mozilla/5.0 (iPhone; CPU iPhone OS 17_4 like Mac OS X) AppleWebKit/605.1.15 Version/17.4 Mobile/15E148 Safari/604.1', ['os' => 'iOS', 'browser' => 'Safari']],
+    'linux firefox' => ['Mozilla/5.0 (X11; Linux x86_64; rv:125.0) Gecko/20100101 Firefox/125.0', ['os' => 'Linux', 'browser' => 'Firefox']],
+    'unknown agent' => ['curl/8.5.0', []],
+]);

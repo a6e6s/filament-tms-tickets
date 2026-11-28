@@ -7,6 +7,7 @@ use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Validator;
 use Illuminate\View\View;
 use Tms\FilamentTickets\Exceptions\TicketSubmissionException;
+use Tms\FilamentTickets\Services\TicketContext;
 use Tms\FilamentTickets\Services\TmsTicketClient;
 
 /**
@@ -45,9 +46,8 @@ class FallbackReportController
                 'name' => $user?->name,
                 'email' => $user?->email,
             ]),
-            'device_metadata' => array_filter([
-                'user_agent' => $request->userAgent(),
-            ]),
+            'device_metadata' => app(TicketContext::class)->forRequest($user, $request->userAgent(), null)
+                + ['user_agent' => $request->userAgent()],
         ];
 
         try {

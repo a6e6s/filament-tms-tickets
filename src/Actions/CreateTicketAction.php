@@ -3,6 +3,7 @@
 namespace Tms\FilamentTickets\Actions;
 
 use Filament\Actions\Action;
+use Filament\Facades\Filament;
 use Filament\Forms\Components\FileUpload;
 use Filament\Forms\Components\Hidden;
 use Filament\Forms\Components\Radio;
@@ -15,6 +16,7 @@ use Filament\Schemas\Components\Utilities\Get;
 use Filament\Support\Enums\Width;
 use Tms\FilamentTickets\Exceptions\TicketSubmissionException;
 use Tms\FilamentTickets\Services\ScreenshotEncoder;
+use Tms\FilamentTickets\Services\TicketContext;
 use Tms\FilamentTickets\Services\TmsTicketClient;
 
 class CreateTicketAction
@@ -100,7 +102,15 @@ class CreateTicketAction
                         'name' => $user?->name,
                         'email' => $user?->email,
                     ]),
-                    'device_metadata' => json_decode((string) ($data['device_metadata'] ?? ''), true) ?: null,
+                    'device_metadata' => array_filter([
+                        ...self::decodeMetadata($data['device_metadata'] ?? null),
+                        ...app(TicketContext::class)->forRequest(
+                            $user,
+                            request()->userAgent(),
+                            Filament::getCurrentPanel()?->getId(),
+                        ),
+                        'tenant' => TicketContext::tenant(),
+                    ], fn (mixed $value): bool => $value !== null),
                 ];
 
                 $files = $mode === 'upload' ? array_values(array_filter((array) ($data['screenshots'] ?? []))) : [];
@@ -141,6 +151,16 @@ class CreateTicketAction
         return TextInput::make($name)
             ->hiddenLabel()
             ->extraFieldWrapperAttributes(['style' => 'display: none']);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private static function decodeMetadata(mixed $value): array
+    {
+        $decoded = json_decode((string) $value, true);
+
+        return is_array($decoded) ? $decoded : [];
     }
 
     /**

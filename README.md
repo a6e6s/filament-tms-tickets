@@ -5,6 +5,7 @@ A Filament v5 plugin that adds a **Create ticket** button to any panel of a host
 Features:
 
 - Title, description, and priority. The reporter and page URL come from the signed-in user and the current page.
+- Signed-in user ID, panel, platform label, OS and browser, and the tenant (only when the panel uses Filament tenancy). The Laravel session ID is never sent.
 - Screenshots, chosen with a mode switch: **Select an element** (click **Pick an element**, then click part of the page, up to 5), **Upload** (files from disk), or **None** (default). Every captured screenshot appears as a thumbnail in the form, with a Remove button.
 - Captures the page URL, user agent, viewport, and recent browser console errors automatically.
 - Idempotency key per form, so a retry after a network failure does not create a duplicate ticket.
@@ -48,9 +49,26 @@ Local development alternative (path repository pointing at a checkout, useful fo
 TMS_TICKETS_URL=https://tms.example.com
 TMS_TICKETS_TOKEN=paste-the-sourceapp-token-here
 TMS_TICKETS_TIMEOUT=10
+# Label shown to TMS staff for this host app. Defaults to APP_NAME.
+TMS_TICKETS_PLATFORM="Jit HR"
 # Optional kill switch; the button is hidden when false.
 TMS_TICKETS_ENABLED=true
 ```
+
+### What metadata is sent
+
+Each ticket's `device_metadata` includes:
+
+| Key | Source | When |
+| --- | --- | --- |
+| `user_id` | `auth()->id()` of the signed-in user | Signed-in users only |
+| `panel` | Current Filament panel ID | Button in a panel (not the fallback form) |
+| `platform` | `TMS_TICKETS_PLATFORM`, else `APP_NAME` | Always |
+| `os`, `browser` | Parsed from the user agent | When recognized |
+| `tenant` | `{id, name}` of the current Filament tenant | Only when the panel has tenancy and a tenant is set |
+| `user_agent`, `viewport`, `console_errors` | Browser | Panel button only (viewport and console errors) |
+
+Systems without tenants send no `tenant` key. The session ID is never read or sent.
 
 Optionally publish the config file:
 
